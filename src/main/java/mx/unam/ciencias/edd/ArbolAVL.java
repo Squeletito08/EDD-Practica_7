@@ -22,7 +22,7 @@ public class ArbolAVL<T extends Comparable<T>>
          * @param elemento el elemento del vértice.
          */
         public VerticeAVL(T elemento) {
-            // Aquí va su código.
+            super(elemento);
         }
 
         /**
@@ -30,7 +30,7 @@ public class ArbolAVL<T extends Comparable<T>>
          * @return la altura del vértice.
          */
         @Override public int altura() {
-            // Aquí va su código.
+            return altura; 
         }
 
         /**
@@ -38,7 +38,24 @@ public class ArbolAVL<T extends Comparable<T>>
          * @return una representación en cadena del vértice AVL.
          */
         @Override public String toString() {
-            // Aquí va su código.
+            String s = elemento.toString(); 
+            s += " " + altura;
+            s += "/" + balanceVertice();
+            return s; 
+        }
+
+        /*Metodo auxiliar para calcular el balance de un vertice */
+        private int balanceVertice(){
+            int alturaSubArbolIzquierdo = -1;
+            int alturaSubArbolDerecho = -1;
+
+            if(hayIzquierdo())
+                alturaSubArbolIzquierdo = this.izquierdo.altura();
+            
+            if(hayDerecho())
+                alturaSubArbolDerecho = this.derecho.altura();
+
+            return alturaSubArbolIzquierdo - alturaSubArbolDerecho; 
         }
 
         /**
@@ -55,7 +72,7 @@ public class ArbolAVL<T extends Comparable<T>>
             if (objeto == null || getClass() != objeto.getClass())
                 return false;
             @SuppressWarnings("unchecked") VerticeAVL vertice = (VerticeAVL)objeto;
-            // Aquí va su código.
+            return (altura == vertice.altura && super.equals(objeto));
         }
     }
 
@@ -80,7 +97,7 @@ public class ArbolAVL<T extends Comparable<T>>
      * @return un nuevo vértice con el elemento recibido dentro del mismo.
      */
     @Override protected Vertice nuevoVertice(T elemento) {
-        // Aquí va su código.
+        return new VerticeAVL(elemento);
     }
 
     /**
@@ -90,7 +107,8 @@ public class ArbolAVL<T extends Comparable<T>>
      * @param elemento el elemento a agregar.
      */
     @Override public void agrega(T elemento) {
-        // Aquí va su código.
+        super.agrega(elemento);
+        rebalanceaArbolAVL((VerticeAVL)ultimoAgregado);
     }
 
     /**
@@ -99,7 +117,140 @@ public class ArbolAVL<T extends Comparable<T>>
      * @param elemento el elemento a eliminar del árbol.
      */
     @Override public void elimina(T elemento) {
-        // Aquí va su código.
+        VerticeAVL vertice = (VerticeAVL)busca(elemento);
+
+        if(vertice == null)
+            return; 
+
+        elementos--; 
+
+        if(vertice.izquierdo != null && vertice.derecho != null){
+            vertice = (VerticeAVL)intercambiaEliminable(vertice);
+            eliminaVertice(vertice);
+        }
+
+        eliminaVertice(vertice);
+        rebalanceaArbolAVL((VerticeAVL)vertice.padre);
+    }
+
+    /**
+     * Metodo auxiliar de rebalanceo despues de agregar o eliminar
+     * @param vertice el padre del vertice recien agregado o eliminado
+     */
+    private void rebalanceaArbolAVL(VerticeAVL vertice){
+
+        if(vertice == null)
+            return; 
+        
+        /*Hijo izquierdo del vertice */
+        VerticeAVL p = getHijoIzquierdo(vertice);  /*p */
+
+        /*Hijo derecho del vertice */
+        VerticeAVL q = getHijoDerecho(vertice); /*q */
+
+        /*Hijo izquierdo q */
+        VerticeAVL x;
+
+        /*Hijo derecho de p */
+        VerticeAVL y;
+
+        vertice.altura = calculaAltura(vertice);
+
+        int balance = vertice.balanceVertice(); 
+
+        int balance_q = 0;
+        int balance_p = 0;
+        
+        if(q != null)
+            balance_q = q.balanceVertice(); 
+
+        if(p != null)
+            balance_p = p.balanceVertice();
+        
+
+        if(balance == -2){
+
+            /*Hijo izquierdo de q */
+            x = getHijoIzquierdo(q); 
+
+            if(balance_q == 1){
+                super.giraDerecha(q);
+                q.altura = calculaAltura(q);
+                x.altura = calculaAltura(x); 
+                q = getHijoDerecho(vertice);
+                x = getHijoIzquierdo(q); 
+            }
+
+            /*Para este punto el balance de q es 0, -1 o -2 */
+            super.giraIzquierda(vertice);
+            vertice.altura = calculaAltura(vertice);
+            q.altura = calculaAltura(q); 
+        }
+
+        if(balance == 2){
+
+            /*Hijo derecho de p */
+            y = getHijoDerecho(p); 
+
+            if(balance_p == -1){
+                super.giraIzquierda(p);
+                y.altura = calculaAltura(y);
+                p.altura = calculaAltura(p);
+                p = getHijoIzquierdo(vertice);
+                y = getHijoDerecho(p);
+            }
+
+            /*Para este punto el balance de p es 0, 1 o 2 */
+            super.giraDerecha(vertice);
+            vertice.altura = calculaAltura(vertice);
+            p.altura = calculaAltura(p);
+        }
+
+        rebalanceaArbolAVL((VerticeAVL)vertice.padre);
+    }
+
+    /**
+     * Calcula la altura de un vertice de tipo VerticeAVL aprovechando la 
+     * propieadad altura. Esto lo hace en tiempo constante.
+     * @param vertice el vertice a culcular altura.
+     * @return el máximo entre la altura del subArbolizquierdo y del 
+     *         subArbolderecho + 1, o -1 en caso de que el vertice sea null.
+     */
+    protected int calculaAltura(VerticeAVL vertice){
+
+        VerticeAVL hijoIzquierdo = getHijoIzquierdo(vertice);
+        VerticeAVL hijoDerecho = getHijoDerecho(vertice);
+
+        int alturaSubArbolIzquierdo = -1; 
+        int alturaSubArbolDerecho = -1;
+
+        if(vertice.hayIzquierdo())
+            alturaSubArbolIzquierdo = hijoIzquierdo.altura;
+
+        if(vertice.hayDerecho())
+            alturaSubArbolDerecho = hijoDerecho.altura; 
+
+        return max(alturaSubArbolIzquierdo,alturaSubArbolDerecho) + 1;
+    }
+
+    /**
+     * Obtiene el hijo derecho de un VerticeAVL
+     * @param vertice un vertice
+     * @return un VerticeAVL que será el hijo derecho del vertice, 
+     *         o null si el hijo derecho no existe. 
+     */
+    protected VerticeAVL getHijoDerecho(VerticeAVL vertice){
+        return vertice.hayDerecho() ? (VerticeAVL)vertice.derecho : null; 
+    }
+
+    /**
+     * Obtiene el hijo derecho de un VerticeAVL
+     * @param vertice un vertice
+     * @return un VerticeAVL que será el hijo izquierdo del vertice, 
+     *         o null si el hijo derecho no existe. 
+     */
+    protected VerticeAVL getHijoIzquierdo(VerticeAVL vertice){
+        return (vertice.hayIzquierdo()) ? (VerticeAVL)vertice.izquierdo : null; 
     }
 
     /**

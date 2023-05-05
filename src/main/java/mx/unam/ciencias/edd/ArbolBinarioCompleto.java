@@ -1,6 +1,7 @@
 package mx.unam.ciencias.edd;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * <p>Clase para árboles binarios completos.</p>
@@ -18,17 +19,28 @@ public class ArbolBinarioCompleto<T> extends ArbolBinario<T> {
 
         /* Inicializa al iterador. */
         private Iterador() {
-            // Aquí va su código.
+            cola = new Cola<Vertice>(); 
+            if(raiz != null)
+                cola.mete(raiz); 
         }
 
         /* Nos dice si hay un elemento siguiente. */
         @Override public boolean hasNext() {
-            // Aquí va su código.
+            return !cola.esVacia(); 
         }
 
         /* Regresa el siguiente elemento en orden BFS. */
         @Override public T next() {
-            // Aquí va su código.
+            
+            if(cola.esVacia())
+                throw new NoSuchElementException();  
+            
+            Vertice vertice = cola.saca(); 
+            if(vertice.hayIzquierdo())
+                cola.mete(vertice.izquierdo); 
+            if(vertice.hayDerecho())
+                cola.mete(vertice.derecho); 
+            return vertice.elemento; 
         }
     }
 
@@ -56,8 +68,42 @@ public class ArbolBinarioCompleto<T> extends ArbolBinario<T> {
      *         <code>null</code>.
      */
     @Override public void agrega(T elemento) {
-        // Aquí va su código.
+        if(elemento == null)
+            throw new IllegalArgumentException("No se pueden agregar elementos nulos");
+
+        Vertice nuevo = nuevoVertice(elemento); 
+        elementos++; 
+
+        if(raiz == null){
+            raiz = nuevo;
+            return; 
+        }
+
+        Cola<Vertice> cola = new Cola<Vertice>(); 
+        cola.mete(raiz); 
+        while(!cola.esVacia()){
+            Vertice v = cola.saca();
+
+            if(v.hayIzquierdo()){
+                cola.mete(v.izquierdo);
+            }
+            else{
+                nuevo.padre = v;
+                v.izquierdo = nuevo;
+                return;
+            }
+
+            if(v.hayDerecho()){
+                cola.mete(v.derecho);
+            }
+            else{
+                nuevo.padre = v;
+                v.derecho = nuevo;
+                return;
+            }
+        }
     }
+
 
     /**
      * Elimina un elemento del árbol. El elemento a eliminar cambia lugares con
@@ -66,7 +112,37 @@ public class ArbolBinarioCompleto<T> extends ArbolBinario<T> {
      * @param elemento el elemento a eliminar.
      */
     @Override public void elimina(T elemento) {
-        // Aquí va su código.
+        Vertice verticeBuscado = vertice(busca(elemento));
+
+        if(verticeBuscado == null)
+            return; 
+
+        elementos--; 
+
+        if(elementos == 0){
+            raiz = null;
+            return; 
+        }
+            
+        Vertice ultimoVertice = null; 
+
+        Cola<Vertice> cola = new Cola<Vertice>(); 
+        cola.mete(raiz); 
+        while(!cola.esVacia()){
+            ultimoVertice = cola.saca();
+            if(ultimoVertice.hayIzquierdo())
+                cola.mete(ultimoVertice.izquierdo);
+            if(ultimoVertice.hayDerecho())
+                cola.mete(ultimoVertice.derecho);
+        }
+
+        verticeBuscado.elemento = ultimoVertice.elemento; 
+
+        if(ultimoVertice.padre.izquierdo == ultimoVertice)
+            ultimoVertice.padre.izquierdo = null; 
+
+        if(ultimoVertice.padre.derecho == ultimoVertice)
+            ultimoVertice.padre.derecho = null;          
     }
 
     /**
@@ -75,7 +151,18 @@ public class ArbolBinarioCompleto<T> extends ArbolBinario<T> {
      * @return la altura del árbol.
      */
     @Override public int altura() {
-        // Aquí va su código.
+        if(esVacia())
+            return -1;
+        return log2(elementos); 
+    }
+
+    protected int log2(int n){
+        int contador = 0; 
+        while (n >> 1 > 0){
+            n = n >> 1; 
+            contador++;
+        }
+        return contador;
     }
 
     /**
@@ -84,7 +171,19 @@ public class ArbolBinarioCompleto<T> extends ArbolBinario<T> {
      * @param accion la acción a realizar en cada elemento del árbol.
      */
     public void bfs(AccionVerticeArbolBinario<T> accion) {
-        // Aquí va su código.
+        if(esVacia())
+            return; 
+
+        Cola<VerticeArbolBinario<T>> cola = new Cola<VerticeArbolBinario<T>>(); 
+        cola.mete(raiz); 
+        while(!cola.esVacia()){
+            VerticeArbolBinario<T> v = cola.saca(); 
+            accion.actua(v); 
+            if(v.hayIzquierdo())
+                cola.mete(v.izquierdo());
+            if(v.hayDerecho())
+                cola.mete(v.derecho());
+        }
     }
 
     /**
